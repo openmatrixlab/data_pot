@@ -85,7 +85,7 @@ busqueda = st.text_input("Buscar por palabras clave (en nombre, carpeta o ruta):
 # Filtrado por palabras clave si se ingresan términos de búsqueda
 if busqueda:
     palabras = busqueda.lower().split()
-    columnas = ["Nombre"]
+    columnas = ["Nombre", "Ruta"]
 
 
     def coincide(fila):
