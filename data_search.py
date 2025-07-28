@@ -3,17 +3,23 @@ import pandas as pd
 from pathlib import Path
 import base64
 
-# Configuración de la página
+# Configuración general de la página de la aplicación
 st.set_page_config(page_title="Buscador de Archivos", layout="wide")
 
-# --- FUNCIÓN PARA FONDO PERSONALIZADO ---
+
+# --- FUNCIÓN PARA APLICAR FONDO PERSONALIZADO Y ESTILOS DE INTERFAZ ---
 def set_background(jpg_file):
-    """Aplica una imagen de fondo y ajusta colores de texto para contraste."""
+    """
+    Aplica una imagen de fondo a la aplicación y configura los estilos de color
+    para asegurar el contraste adecuado entre texto e interfaz.
+    """
     with open(jpg_file, "rb") as file:
         encoded = base64.b64encode(file.read()).decode()
+
+    # Hoja de estilos CSS embebida
     css = f"""
     <style>
-    /* Fondo general de la app */
+    /* Fondo principal de la aplicación */
     .stApp {{
         background-image: url(data:image/jpg;base64,{encoded});
         background-size: cover;
@@ -21,18 +27,18 @@ def set_background(jpg_file):
         background-attachment: fixed;
     }}
 
-    /* Colores blancos para todos los textos visibles */
+    /* Texto general en color blanco para mantener contraste sobre el fondo */
     h1, h2, h3, h4, h5, h6, p, label, span, .stMarkdown, .stTextInput label {{
         color: white !important;
     }}
 
-    /* Input del buscador */
+    /* Campo de entrada de texto con fondo semitransparente y texto blanco */
     .stTextInput > div > div > input {{
         background-color: rgba(0,0,0,0.6);
         color: white !important;
     }}
 
-    /* Filtro desplegable (extensiones) – letras negras para contraste */
+    /* Menú desplegable (extensiones) con estilo claro para mayor legibilidad */
     .stMultiSelect div[data-baseweb="select"] > div {{
         background-color: white !important;
         color: black !important;
@@ -45,7 +51,7 @@ def set_background(jpg_file):
         color: black !important;
     }}
 
-    /* DataFrame con fondo blanco y texto negro */
+    /* Visualización del DataFrame con fondo blanco y texto negro */
     .stDataFrame {{
         background-color: white !important;
         color: black !important;
@@ -54,48 +60,52 @@ def set_background(jpg_file):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-# Aplicar fondo si existe
+
+# Verifica si la imagen de fondo existe y la aplica
 imagen_fondo = "fondo.jpg"
 if Path(imagen_fondo).exists():
     set_background(imagen_fondo)
 
-# Título principal
+# Título principal de la aplicación
 st.title("🔍 Buscador de Archivos - Data POT")
 
-# Cargar archivo Excel
+# Ruta y verificación del archivo Excel con el inventario de archivos
 excel_path = "Inventario_archivosAnywhere.xlsx"
 if not Path(excel_path).exists():
     st.error(f"No se encontró el archivo {excel_path}")
     st.stop()
 
+# Carga del archivo Excel
 df = pd.read_excel(excel_path)
-df["Extensión"] = df["Extensión"].str.lower()
+df["Extensión"] = df["Extensión"].str.lower()  # Normalización de extensiones
 
-# Campo de búsqueda
+# Campo de entrada para búsqueda por palabra clave
 busqueda = st.text_input("Buscar por palabras clave (en nombre, carpeta o ruta):")
 
+# Filtrado por palabras clave si se ingresan términos de búsqueda
 if busqueda:
     palabras = busqueda.lower().split()
     columnas = ["Nombre"]
 
+
     def coincide(fila):
         return any(pal in str(fila[col]).lower() for pal in palabras for col in columnas)
+
 
     df_filtrado = df[df.apply(coincide, axis=1)]
 else:
     df_filtrado = df
 
-# Filtro por extensión (aplicado después de la búsqueda)
+# Opciones de filtrado por tipo de extensión de archivo
 extensiones = sorted(df_filtrado["Extensión"].dropna().unique())
 ext_seleccionadas = st.multiselect("Filtrar por tipo de archivo:",
                                    ["(Mostrar todas)"] + extensiones,
                                    default="(Mostrar todas)")
 
+# Aplica el filtro solo si el usuario selecciona una o varias extensiones específicas
 if "(Mostrar todas)" not in ext_seleccionadas:
     df_filtrado = df_filtrado[df_filtrado["Extensión"].isin(ext_seleccionadas)]
 
-# Mostrar resultados
+# Presentación de resultados filtrados
 st.write(f"**{len(df_filtrado)} archivos encontrados**")
 st.dataframe(df_filtrado, use_container_width=True, height=200)
-
-
