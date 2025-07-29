@@ -79,18 +79,31 @@ if not Path(excel_path).exists():
 df = pd.read_excel(excel_path)
 df["Extensión"] = df["Extensión"].str.lower()  # Normalización de extensiones
 
-# Campo de entrada para búsqueda por palabra clave
-busqueda = st.text_input("Buscar por palabras clave (en nombre, carpeta o ruta):")
+# Selector de campo de búsqueda
+modo_busqueda = st.radio(
+    "Buscar por:",
+    options=["Nombre", "Carpeta", "Todos"],
+    horizontal=True,
+    index=2
+)
 
-# Filtrado por palabras clave si se ingresan términos de búsqueda
+# Campo de entrada para búsqueda
+busqueda = st.text_input("Buscar por palabra clave:")
+
+# Definir columnas según el modo de búsqueda
+if modo_busqueda == "Nombre":
+    columnas = ["Nombre"]
+elif modo_busqueda == "Carpeta":
+    columnas = ["Carpeta"]
+else:
+    columnas = ["Nombre", "Carpeta"]
+
+# Aplicar filtro si hay búsqueda
 if busqueda:
     palabras = busqueda.lower().split()
-    columnas = ["Nombre", "Ruta"]
-
 
     def coincide(fila):
         return any(pal in str(fila[col]).lower() for pal in palabras for col in columnas)
-
 
     df_filtrado = df[df.apply(coincide, axis=1)]
 else:
